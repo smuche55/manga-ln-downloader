@@ -118,11 +118,12 @@ class PoseidonScansParser(SiteParser):
         return images
 
 def get_parser(url):
-    if 'shmtranslations.com' in url:
+    url_lower = url.lower()
+    if 'shmtranslations.com' in url_lower:
         return SHMTranslationsParser()
-    elif 'scan-manga.com' in url:
+    elif 'scan-manga.com' in url_lower:
         return ScanMangaParser()
-    elif 'poseidon-scans.net' in url:
+    elif 'poseidon-scans.net' in url_lower:
         return PoseidonScansParser()
     else:
         # Default parser or None
