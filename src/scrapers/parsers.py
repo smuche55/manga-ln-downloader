@@ -35,9 +35,12 @@ class SHMTranslationsParser(SiteParser):
             # A safer approach for WordPress ToC is to find links whose text contains "Chapter" or whose href contains "chapter"
             text = a.text.lower()
             if ('chapter' in text or 'chapter' in href.lower()) and 'shmtranslations.com' in href.lower():
-                # exclude common non-chapter links
+                # exclude common non-chapter links and reply links
                 if '/ongoing/' not in href and '/completed/' not in href and '/dropped/' not in href:
-                    chapters.append(href)
+                    if '?replytocom=' not in href and '#respond' not in href:
+                        # Clean up URL (remove any trailing query strings or anchors just in case)
+                        clean_href = href.split('?')[0].split('#')[0]
+                        chapters.append(clean_href)
         
         # Sometimes there's a specific class. If this fails, we can refine it.
         # Removing duplicates while preserving order
