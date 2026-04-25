@@ -34,7 +34,7 @@ class SHMTranslationsParser(SiteParser):
             # Usually the ToC has paragraphs with links to chapters.
             # A safer approach for WordPress ToC is to find links whose text contains "Chapter" or whose href contains "chapter"
             text = a.text.lower()
-            if ('chapter' in text or 'chapter' in href.lower()) and 'shmtranslations.com' in href:
+            if ('chapter' in text or 'chapter' in href.lower()) and 'shmtranslations.com' in href.lower():
                 # exclude common non-chapter links
                 if '/ongoing/' not in href and '/completed/' not in href and '/dropped/' not in href:
                     chapters.append(href)
