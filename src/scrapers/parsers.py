@@ -30,9 +30,14 @@ class SHMTranslationsParser(SiteParser):
         # For SHM Translations, let's look for links that look like chapter links
         for a in soup.find_all('a', href=True):
             href = a['href']
-            # Very basic check: if it's a link to a chapter
-            if 'chapter' in href.lower() and base_url in href:
-                chapters.append(href)
+            # SHM translation chapters don't always contain the base_url, but they do have 'chapter' in text or url
+            # Usually the ToC has paragraphs with links to chapters.
+            # A safer approach for WordPress ToC is to find links whose text contains "Chapter" or whose href contains "chapter"
+            text = a.text.lower()
+            if ('chapter' in text or 'chapter' in href.lower()) and 'shmtranslations.com' in href:
+                # exclude common non-chapter links
+                if '/ongoing/' not in href and '/completed/' not in href and '/dropped/' not in href:
+                    chapters.append(href)
         
         # Sometimes there's a specific class. If this fails, we can refine it.
         # Removing duplicates while preserving order

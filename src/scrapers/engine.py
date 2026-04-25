@@ -12,8 +12,8 @@ class ScraperEngine:
         self.playwright = sync_playwright().start()
         # Launching in non-headless mode is sometimes necessary to bypass strong Cloudflare
         # but for automation we try headless=False first if issues arise, otherwise headless=True
-        # We will use headless=True by default, but override if needed.
-        self.browser = self.playwright.chromium.launch(headless=True)
+        # For sites like scan-manga with strong Cloudflare, headless mode is heavily penalized, so we try non-headless
+        self.browser = self.playwright.chromium.launch(headless=False, args=["--disable-blink-features=AutomationControlled"])
         # Adding some headers and a real user agent helps bypass protections
         self.context = self.browser.new_context(
             user_agent="Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
