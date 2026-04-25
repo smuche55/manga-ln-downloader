@@ -36,10 +36,23 @@ class ScraperEngine:
             # Wait until there are no more than 2 network connections for at least 500 ms.
             page.goto(url, wait_until="networkidle", timeout=60000)
             
-            # Simple Cloudflare check: if title contains "Just a moment"
-            if "Just a moment" in page.title() or "Cloudflare" in page.title():
-                print("Cloudflare detected, waiting...")
-                time.sleep(10) # Wait for challenge to complete
+            # Simple Cloudflare check: check various languages
+            cf_titles = ["just a moment", "cloudflare", "un instant", "attention required"]
+            title_lower = page.title().lower()
+            
+            if any(cf in title_lower for cf in cf_titles):
+                print("\n*** Cloudflare détecté ! ***")
+                print("Veuillez cocher la case 'Je suis humain' dans la fenêtre du navigateur qui vient de s'ouvrir.")
+                print("Vous avez 30 secondes...\n")
+                
+                # Wait up to 30 seconds for the title to change
+                for _ in range(30):
+                    if not any(cf in page.title().lower() for cf in cf_titles):
+                        print("Cloudflare passé avec succès !")
+                        break
+                    time.sleep(1)
+                else:
+                    print("Temps écoulé pour Cloudflare. Le script continue mais risque d'échouer.")
             
             if wait_for_selector:
                 try:
