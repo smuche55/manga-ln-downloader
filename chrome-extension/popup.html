@@ -1,0 +1,79 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <title>Manga to Drive</title>
+  <style>
+    body {
+      width: 320px;
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      padding: 15px;
+      margin: 0;
+      color: #333;
+    }
+    h2 {
+      margin-top: 0;
+      font-size: 18px;
+      border-bottom: 2px solid #4285f4;
+      padding-bottom: 5px;
+    }
+    button {
+      width: 100%;
+      padding: 10px;
+      margin-top: 15px;
+      background-color: #4285f4;
+      color: white;
+      border: none;
+      border-radius: 4px;
+      cursor: pointer;
+      font-weight: bold;
+      font-size: 14px;
+    }
+    button:hover {
+      background-color: #3367d6;
+    }
+    button:disabled {
+      background-color: #cccccc;
+      cursor: not-allowed;
+    }
+    #status {
+      margin-top: 15px;
+      font-size: 13px;
+      white-space: pre-wrap;
+      word-wrap: break-word;
+    }
+    .success { color: green; }
+    .error { color: red; }
+    .progress-bar {
+      width: 100%;
+      background-color: #f3f3f3;
+      border-radius: 4px;
+      margin-top: 10px;
+      display: none;
+    }
+    .progress-fill {
+      height: 10px;
+      background-color: #4caf50;
+      width: 0%;
+      border-radius: 4px;
+      transition: width 0.2s;
+    }
+  </style>
+  <!-- Load JSZip for creating the CBZ file -->
+  <script src="jszip.min.js"></script>
+</head>
+<body>
+  <h2>Manga to Google Drive</h2>
+  <div id="info">Prêt à scanner la page.</div>
+  
+  <button id="btn-download">1. Extraire et envoyer (.cbz)</button>
+  
+  <div class="progress-bar" id="progress-container">
+    <div class="progress-fill" id="progress-fill"></div>
+  </div>
+  
+  <div id="status"></div>
+  
+  <script src="popup.js"></script>
+</body>
+</html>
