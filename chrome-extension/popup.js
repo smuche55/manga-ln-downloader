@@ -49,9 +49,9 @@ document.addEventListener('DOMContentLoaded', function() {
       let count = 0;
 
       // Function to fetch image via background script to bypass CORS/Referer issues
-      const fetchImageViaBackground = (url) => {
+      const fetchImageViaBackground = (url, pageUrl) => {
         return new Promise((resolve, reject) => {
-          chrome.runtime.sendMessage({ action: "fetchImage", url: url }, (response) => {
+          chrome.runtime.sendMessage({ action: "fetchImage", url: url, pageUrl: pageUrl }, (response) => {
             if (chrome.runtime.lastError) {
               return reject(new Error(chrome.runtime.lastError.message));
             }
@@ -77,7 +77,7 @@ document.addEventListener('DOMContentLoaded', function() {
           updateStatus(`Téléchargement de l'image ${i+1}/${total}...`);
           
           // Fetch image via background script
-          let blob = await fetchImageViaBackground(imgUrl);
+          let blob = await fetchImageViaBackground(imgUrl, tab.url);
           
           // Determine extension
           let ext = '.jpg';
@@ -115,13 +115,17 @@ document.addEventListener('DOMContentLoaded', function() {
            return;
         }
 
-        updateStatus("Envoi vers Google Drive...");
-        setProgress(70);
-
         try {
+          updateStatus("Recherche du dossier 'Lecture/Mangas' sur Drive...");
+          let lectureFolderId = await getOrCreateFolder(token, 'Lecture');
+          let mangasFolderId = await getOrCreateFolder(token, 'Mangas', lectureFolderId);
+
+          updateStatus("Envoi vers Google Drive...");
+          setProgress(70);
+
           // 5. Upload to Drive (Multipart upload)
           let filename = data.title + ".cbz";
-          let fileId = await uploadFileToDrive(token, cbzBlob, filename);
+          let fileId = await uploadFileToDrive(token, cbzBlob, filename, mangasFolderId);
           
           setProgress(100);
           updateStatus(`Succès ! Fichier sauvegardé sur Drive.\nID: ${fileId}`, 'success');
@@ -137,13 +141,53 @@ document.addEventListener('DOMContentLoaded', function() {
     }
   });
 
-  async function uploadFileToDrive(token, fileBlob, filename) {
+  async function getOrCreateFolder(token, folderName, parentId = null) {
+    let query = `mimeType='application/vnd.google-apps.folder' and name='${folderName}' and trashed=false`;
+    if (parentId) {
+      query += ` and '${parentId}' in parents`;
+    }
+
+    let url = 'https://www.googleapis.com/drive/v3/files?q=' + encodeURIComponent(query) + '&fields=files(id)';
+    let res = await fetch(url, {
+      headers: { 'Authorization': 'Bearer ' + token }
+    });
+    if (!res.ok) throw new Error(`Erreur lors de la recherche du dossier ${folderName}`);
+    let data = await res.json();
+
+    if (data.files && data.files.length > 0) {
+      return data.files[0].id;
+    }
+
+    const metadata = {
+      name: folderName,
+      mimeType: 'application/vnd.google-apps.folder',
+    };
+    if (parentId) {
+      metadata.parents = [parentId];
+    }
+
+    res = await fetch('https://www.googleapis.com/drive/v3/files', {
+      method: 'POST',
+      headers: {
+        'Authorization': 'Bearer ' + token,
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify(metadata)
+    });
+
+    if (!res.ok) throw new Error(`Erreur lors de la création du dossier ${folderName}`);
+    data = await res.json();
+    return data.id;
+  }
+
+  async function uploadFileToDrive(token, fileBlob, filename, parentFolderId) {
     const metadata = {
       name: filename,
       mimeType: 'application/vnd.comicbook+zip',
-      // We upload to root directory for simplicity in the extension, 
-      // but you can add a parent folder ID here if you want to query for the 'Lecture/Mangas' folder first.
     };
+    if (parentFolderId) {
+      metadata.parents = [parentFolderId];
+    }
 
     const form = new FormData();
     form.append('metadata', new Blob([JSON.stringify(metadata)], { type: 'application/json' }));

@@ -1,12 +1,32 @@
 chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
   if (request.action === "fetchImage") {
-    fetch(request.url, {
-      method: 'GET',
-      headers: {
-        'Accept': 'image/avif,image/webp,image/apng,image/svg+xml,image/*,*/*;q=0.8',
-        // 'Referer' is often automatically added by the browser in background scripts,
-        // which helps bypass some anti-hotlinking protections.
-      }
+    const url = request.url;
+    const pageUrl = request.pageUrl;
+
+    // Set up a dynamic rule to inject the Referer header to bypass hotlink protection
+    const ruleId = 1;
+    chrome.declarativeNetRequest.updateDynamicRules({
+      removeRuleIds: [ruleId],
+      addRules: [{
+        id: ruleId,
+        priority: 1,
+        action: {
+          type: "modifyHeaders",
+          requestHeaders: [
+            { header: "Referer", operation: "set", value: pageUrl },
+            { header: "Origin", operation: "set", value: new URL(pageUrl).origin }
+          ]
+        },
+        condition: { urlFilter: url, resourceTypes: ["xmlhttprequest"] }
+      }]
+    }).then(() => {
+      // Now fetch the image. The rule will automatically attach the correct Referer.
+      return fetch(url, {
+        method: 'GET',
+        headers: {
+          'Accept': 'image/avif,image/webp,image/apng,image/svg+xml,image/*,*/*;q=0.8',
+        }
+      });
     })
     .then(response => {
       if (!response.ok) throw new Error(`HTTP ${response.status}`);
