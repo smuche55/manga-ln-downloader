@@ -48,14 +48,36 @@ document.addEventListener('DOMContentLoaded', function() {
       let total = data.images.length;
       let count = 0;
 
+      // Function to fetch image via background script to bypass CORS/Referer issues
+      const fetchImageViaBackground = (url) => {
+        return new Promise((resolve, reject) => {
+          chrome.runtime.sendMessage({ action: "fetchImage", url: url }, (response) => {
+            if (chrome.runtime.lastError) {
+              return reject(new Error(chrome.runtime.lastError.message));
+            }
+            if (!response) {
+              return reject(new Error("No response from background script"));
+            }
+            if (response.success) {
+              // Convert base64 Data URL back to Blob
+              fetch(response.dataUrl)
+                .then(res => res.blob())
+                .then(resolve)
+                .catch(reject);
+            } else {
+              reject(new Error(response.error));
+            }
+          });
+        });
+      };
+
       for (let i = 0; i < total; i++) {
         let imgUrl = data.images[i];
         try {
           updateStatus(`Téléchargement de l'image ${i+1}/${total}...`);
-          // Fetch image as blob
-          let response = await fetch(imgUrl);
-          if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
-          let blob = await response.blob();
+          
+          // Fetch image via background script
+          let blob = await fetchImageViaBackground(imgUrl);
           
           // Determine extension
           let ext = '.jpg';
