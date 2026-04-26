@@ -1,10 +1,15 @@
+let currentReferer = "";
+
 chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
   if (request.action === "fetchImage") {
     const url = request.url;
     const pageUrl = request.pageUrl;
 
-    // Set up a dynamic rule to inject the Referer header to bypass hotlink protection
     const ruleId = 1;
+
+    // Use a very permissive filter to intercept this specific fetch request
+    // from the background worker. We remove the `Origin` header injection because
+    // it was breaking Poseidon Scan and other CDN requests.
     chrome.declarativeNetRequest.updateDynamicRules({
       removeRuleIds: [ruleId],
       addRules: [{
@@ -13,14 +18,12 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
         action: {
           type: "modifyHeaders",
           requestHeaders: [
-            { header: "Referer", operation: "set", value: pageUrl },
-            { header: "Origin", operation: "set", value: new URL(pageUrl).origin }
+            { header: "Referer", operation: "set", value: pageUrl }
           ]
         },
-        condition: { urlFilter: url, resourceTypes: ["xmlhttprequest"] }
+        condition: { urlFilter: "*", resourceTypes: ["xmlhttprequest"] }
       }]
     }).then(() => {
-      // Now fetch the image. The rule will automatically attach the correct Referer.
       return fetch(url, {
         method: 'GET',
         headers: {
@@ -33,7 +36,6 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
       return response.blob();
     })
     .then(blob => {
-      // We must convert the blob to a base64 string to send it back via Chrome messaging
       const reader = new FileReader();
       reader.onloadend = () => {
         sendResponse({ success: true, dataUrl: reader.result, type: blob.type });
@@ -43,6 +45,7 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
     .catch(error => {
       sendResponse({ success: false, error: error.message });
     });
-    return true; // Keep the message channel open for the async response
+    
+    return true; // async response
   }
 });
