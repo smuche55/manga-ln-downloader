@@ -1,13 +1,15 @@
 {
   "manifest_version": 3,
-  "name": "Manga to Drive Downloader",
+  "name": "Scan-Manga Downloader (Test)",
   "version": "1.0",
-  "description": "Télécharge les chapitres de manga depuis la page courante au format CBZ et les envoie sur Google Drive.",
+  "description": "Télécharge les chapitres de manga depuis scan-manga.com.",
   "permissions": [
     "activeTab",
     "scripting",
     "identity",
-    "downloads"
+    "downloads",
+    "declarativeNetRequest",
+    "declarativeNetRequestWithHostAccess"
   ],
   "host_permissions": [
     "https://*/*",
